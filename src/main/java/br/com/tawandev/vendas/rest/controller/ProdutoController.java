@@ -1,8 +1,8 @@
 package br.com.tawandev.vendas.rest.controller;
 
-import br.com.tawandev.vendas.domain.entities.Cliente;
 import br.com.tawandev.vendas.domain.entities.Produto;
 import br.com.tawandev.vendas.repositories.ProdutosRepository;
+import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
@@ -15,13 +15,21 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/produtos")
+@Api("Api Produtos")
 public class ProdutoController {
 
+    public static final String PRODUTO_NÃO_ENCONTRADO_PARA_AO_ID_INFORMADO = "Produto não encontrado par ao ID informado";
+    public static final String ERRO_DE_VALIDAÇÃO = "Erro de validação";
     @Autowired
     private ProdutosRepository produtosRepository;
 
     @GetMapping("/{id}")
-    public Produto getById(@PathVariable Integer id) {
+    @ApiOperation("Obtem detalhes de um produto")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Produto encontrado com sucesso"),
+            @ApiResponse(code = 404, message = PRODUTO_NÃO_ENCONTRADO_PARA_AO_ID_INFORMADO),
+    })
+    public Produto getById(@PathVariable @ApiParam("Id do produto") Integer id) {
         return produtosRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Produto não encontrado"));
@@ -41,13 +49,24 @@ public class ProdutoController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @ApiOperation("Salva um produto")
+    @ApiResponses({
+            @ApiResponse(code = 201, message = "Produto salvo com sucesso"),
+            @ApiResponse(code = 400, message = ERRO_DE_VALIDAÇÃO)
+    })
     public Produto save(@RequestBody @Valid Produto produto) {
         return produtosRepository.save(produto);
     }
 
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void update(@PathVariable Integer id, @RequestBody @Valid Produto produto) {
+    @ApiOperation("Atualiza um produto")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Produto atualizado com sucesso"),
+            @ApiResponse(code = 400, message = ERRO_DE_VALIDAÇÃO),
+            @ApiResponse(code = 404, message = PRODUTO_NÃO_ENCONTRADO_PARA_AO_ID_INFORMADO)
+    })
+    public void update(@PathVariable @ApiParam("Id do produto") Integer id, @RequestBody @Valid Produto produto) {
         produtosRepository.findById(id).map(p -> {
             produto.setId(p.getId());
             produtosRepository.save(produto);
@@ -56,8 +75,13 @@ public class ProdutoController {
     }
 
     @DeleteMapping("/{id}")
+    @ApiOperation("Deleta um produto")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Produto deletado com sucesso"),
+            @ApiResponse(code = 404, message = PRODUTO_NÃO_ENCONTRADO_PARA_AO_ID_INFORMADO)
+    })
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Integer id) {
+    public void delete(@PathVariable @ApiParam("Id do produto") Integer id) {
         produtosRepository.findById(id).map(p -> {
             produtosRepository.save(p);
             return Void.TYPE;
